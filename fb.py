@@ -96,11 +96,11 @@ if __name__ == "__main__":
       #print post, '\n', post.get_text(), '------------------\n'
       name_elt = post.find("span", class_="fwb fcg")
       if not name_elt or name_elt.get_text() != name:
-         print "skipping: ", post.get_text()
+         print "skipping: ", post.get_text().encode("UTF-8")
          continue         
       post_text = post.find("div", class_="_5pbx userContent")
       if not post_text:
-         print "skipping: ", post.get_text()
+         print "skipping: ", post.get_text().encode("UTF-8")
          continue      
       date_elt = post.find("abbr", class_="_5ptz")
       if date_elt:
