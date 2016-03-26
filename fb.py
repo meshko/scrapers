@@ -46,16 +46,19 @@ def get_html(driver, url, username, password):
    driver.implicitly_wait(30)
 
    #driver.find_element_by_link_text("All").click()   
-   prev_height = -1
+   prev_heights = []
    for i in range(1,500000):
        #print "will get height"
        driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-       height = driver.execute_script("return document.body.scrollHeight;")
-       if height == prev_height:
-          break
-       prev_height = height
-       print "scrolled", height
-       time.sleep(.9)
+       height = driver.execute_script("return document.body.scrollHeight;")              
+       prev_heights.append(height)
+       if (len(prev_heights) >= 4):
+         last_n_elts = prev_heights[-4:]
+         print prev_heights
+         if len(filter(lambda x: x != last_n_elts[0], last_n_elts)) == 0: # all equals
+            break
+       #print "scrolled", height
+       time.sleep(.5)
    html_source = driver.page_source
    data = html_source.encode('utf-8')
    return data
