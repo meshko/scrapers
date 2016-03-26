@@ -18,8 +18,8 @@ purl = urlparse(base_url)
 baser_url = purl.scheme + "://" + purl.netloc 
 number = 1
 for link in links_set:
-   response = urllib2.urlopen(baser_url + link)
    print baser_url+ link
+   response = urllib2.urlopen(baser_url + link)
    html = response.read()
    #print html
    soup = BeautifulSoup(html, 'html.parser')
