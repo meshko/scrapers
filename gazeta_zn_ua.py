@@ -1,5 +1,6 @@
 # http://gazeta.zn.ua/authors/stanislav-vasin
 # http://gazeta.zn.ua/search/%D0%B2%D0%B8%D1%82%D0%B0%D0%BB%D0%B8%D0%B9%20%D0%BF%D0%BE%D1%80%D1%82%D0%BD%D0%B8%D0%BA%D0%BE%D0%B2
+# 
 
 from bs4 import BeautifulSoup
 import urllib2
@@ -25,7 +26,7 @@ if __name__ == "__main__":
    
    links_set = set()
    count = 1
-   while add_links(base_url + "/" + str(count), links_set):
+   while add_links(base_url + "?page=" + str(count), links_set):
       count = count + 1
    
    purl = urlparse(base_url)
