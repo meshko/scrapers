@@ -45,12 +45,14 @@ def get_html(driver, url, word):
 
 
 if __name__ == "__main__":
-   f = open("words.txt", "r")
+   filename = "words.txt" if len(sys.argv) == 1 else sys.argv[1]
+   f = open(filename, "r")
    words = f.readlines()
    f.close()
    driver = webdriver.Firefox()
    driver.implicitly_wait(30)   
-   
+  
+   count = 0 
    for word in words:
       word = word.strip('\r\n')
       print "processing word", word,
@@ -62,5 +64,6 @@ if __name__ == "__main__":
          with codecs.open(filename, "w", "utf-8-sig") as f:
             f.write(html.decode("utf-8"))
             f.close()
-      print "done."
+      count += 1
+      print "processed %d%%" % (count * 100.0 / len(words))
    driver.quit()
