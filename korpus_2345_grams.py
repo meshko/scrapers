@@ -37,7 +37,7 @@ def get_html(driver, url, word):
    
    driver.switch_to.window(driver.window_handles[1])
    #WebDriverWait(driver, 60).until(EC.presence_of_element_located((By.XPATH, '/html/body', '')))
-   WebDriverWait(driver, 60).until(EC.text_to_be_present_in_element((By.XPATH, "/html/body"), r"При цитировании примеров просим ссылаться".decode("utf-8")))   
+   WebDriverWait(driver, 180).until(EC.text_to_be_present_in_element((By.XPATH, "/html/body"), r"При цитировании примеров просим ссылаться".decode("utf-8")))   
    #print "loaded!"
    html_source = driver.page_source
    data = html_source.encode('utf-8')   
@@ -59,7 +59,12 @@ if __name__ == "__main__":
       for t in range(2,6):
          print t,
          sys.stdout.flush()
-         html = get_html(driver, "http://ruscorpora.ru/search-ngrams_%d.html" % t, word)
+         for i in range(10):
+            try:   
+               html = get_html(driver, "http://ruscorpora.ru/search-ngrams_%d.html" % t, word)
+               break
+            except:
+               print "failed ", i 
          filename = "%s-%d.html" % (word.decode('utf-8'), t)
          with codecs.open(filename, "w", "utf-8-sig") as f:
             f.write(html.decode("utf-8"))
