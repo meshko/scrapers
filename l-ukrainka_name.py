@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import os
-import csv
+# import csv
 from bs4 import BeautifulSoup
-#from urllib.request import urlopen
+# from urllib.request import urlopen
 from urllib2 import urlopen
 import codecs
 import re
@@ -22,16 +22,32 @@ def clear_unicode_string(s):
 def do_bs4(url):
     name = re.sub("^.*/([^.]*).*", "\\1", url)
     print name
-    if not os.path.exists(name): os.mkdir(name)
+    name = "LU/" + name
+    if not os.path.exists(name): os.makedirs(name)
     response = urlopen(url)
     html = response.read()
     soup = BeautifulSoup(html, 'html.parser')
     links = soup.find_all("p", class_="BT")
+    menu_links = soup.find_all("p", class_="Menu1")
+
+    # remove links which don't actually have links before counting
+    for link in links:
+        aelt = link.find("a")
+        if not aelt:
+            links.remove(link)
+
+    if len(menu_links) > len(links):
+        links = menu_links
     for link in links:
         aelt = link.find("a")
         if not aelt:
             continue  # some texts are missing?
-        linkname = clear_unicode_string(aelt['title'] + aelt.next_sibling.string)  # extract silly date
+        if 'title' in aelt.attrs:
+            linkname = clear_unicode_string(aelt['title'] + aelt.next_sibling.string)  # extract silly date
+        else:
+            linkname = aelt.text
+            if linkname == '+':
+                linkname = aelt.parent.next_sibling.text
         process_item(linkname, aelt['href'], name)
 
 
@@ -42,34 +58,37 @@ def get_text(body_elt):
         idx = text.rfind(u"Попередній твір")
     return text[:idx]
 
-def get_body_elt(url):
+
+def get_body_and_menu_elts(url):
     response = urlopen(url)
     html = response.read()
     soup = BeautifulSoup(html, 'html.parser')
     body = soup.find("td", id="Stuff")
-    return body
+    menu = soup.find("div", class_="TreeDiv")
+    return body, menu
 
-def process_item(title, url, section):
-    body = get_body_elt(url)
+
+def process_item(title, url, section_path):
+    body, menu = get_body_and_menu_elts(url)
 
     # see if this is a multi-part page
-    h3_elt = body.find("h3")
-    links = h3_elt.find_all("a")
+    links = menu.find_all("p", class_="Menu")
     if not links:
         text = get_text(body)
     else:
         print "multi part", title
         text = ""
         for link in links:
-            subbody = get_body_elt(link['href'])
+            aelt = link.find("a")
+            subbody, _ = get_body_and_menu_elts(aelt['href'])
             text += get_text(subbody)
 
     print title
-    with codecs.open(section + "/" + title + ".txt", "w", "utf-8-sig") as outfile:
+    with codecs.open(section_path + "/" + title + ".txt", "w", "utf-8-sig") as outfile:
         outfile.write(text)
 
 
 if __name__ == "__main__":
-  #do_bs4(base_urls[0])
-  for url in base_urls[1:]:
-    do_bs4(url)
+#    do_bs4(base_urls[3])
+    for url in base_urls:
+        do_bs4(url)
