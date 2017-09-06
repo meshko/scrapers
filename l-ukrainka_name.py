@@ -7,11 +7,11 @@ from bs4 import BeautifulSoup
 from urllib2 import urlopen
 import codecs
 import re
-import unicodedata
+import unicodecsv as csv
 
 base_urls = ["http://www.l-ukrainka.name/uk/Prose.html", "http://www.l-ukrainka.name/uk/Publicistics.html",
              "http://www.l-ukrainka.name/uk/Criticism.html", "http://www.l-ukrainka.name/uk/Corresp.html"]
-
+author = u"Леся Українка"
 
 def clear_unicode_string(s):
     control_chars = ''.join(map(unichr, range(0, 32) + range(127, 160)))
@@ -83,9 +83,20 @@ def process_item(title, url, section_path):
             subbody, _ = get_body_and_menu_elts(aelt['href'])
             text += get_text(subbody)
 
-    print title
-    with codecs.open(section_path + "/" + title + ".txt", "w", "utf-8-sig") as outfile:
+    # silly way to extract year from the title
+    date = re.findall("[0-9]{4}", title)
+    if date:
+        date = date[0]
+    else:
+        date = ""
+
+    print title, date
+    filename = section_path + "/" + title + ".txt"
+    with codecs.open(filename, "w", "utf-8-sig") as outfile:
         outfile.write(text)
+    with open(author+".csv", "a") as csvfile:
+        csvwriter = csv.writer(csvfile, encoding='utf-8')
+        csvwriter.writerow([author, title, filename, date, len(text)])
 
 
 if __name__ == "__main__":
