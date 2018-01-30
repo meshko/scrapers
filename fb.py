@@ -1,5 +1,3 @@
-# "https://www.facebook.com/mikhail.kruk"
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
@@ -91,7 +89,7 @@ def get_html(driver, url, username, password, stop_class, posts_limit):
             for elem in elems[:max(1,len(elems)-2)]:
                name_elem = elem.find_element_by_css_selector("span.fwb")
                #print(name_elem)
-               if name_elem and name_elem.text == name:
+               if name_elem and name_elem.text == name: # name mismatch suggests someone else wrote on this wall
                   results.append(elem.get_attribute('innerHTML'))
                driver.execute_script('var element = arguments[0]; element.parentNode.parentNode.parentNode.parentNode.removeChild(element.parentNode.parentNode.parentNode);', elem)
             driver.execute_script("window.scrollTo(0, 0);")
@@ -194,8 +192,6 @@ if __name__ == "__main__":
       f.write("\n\n")
       f.flush()
       print("processed post %d out of %d" % (num_posts, len(postHtmls)))
-      print("wrote %d posts (some skipped; e.g. shares)" % written_posts)
+   print("wrote %d posts (some skipped; e.g. shares)" % written_posts)
    f.close()
    driver.quit()
-
-# 'fwb fcg'
