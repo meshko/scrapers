@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 import codecs
 import re
 import csv
-#import unicodecsv as csv
+from transliterate import translit
 
 def process_file(filename, fout_csv, author):
     print("processing %s" % filename)
@@ -26,12 +26,15 @@ def process_file(filename, fout_csv, author):
             break
     content_elt = soup.find("div", id="content")
     full_text = content_elt.text
-    csvwriter.writerow([author, title + ".txt", title, publish_text, len(full_text)])
-    with open(author + "/" + title + ".txt", "w") as fout:
+    out_file_name = translit(author, 'uk', reversed=True) + "/" + translit(title, 'uk', reversed=True) + ".txt"
+    csvwriter.writerow([author, out_file_name, title, publish_text, len(full_text)])
+    with open(out_file_name, "w") as fout:
         fout.write(full_text)
 
 
 if __name__ == "__main__":
-    with open(sys.argv[1], 'r') as fin, open(sys.argv[2] + ".csv", 'w') as fout:
+    author_translit = translit(sys.argv[2], "uk", reversed=True)
+    os.mkdir(author_translit)
+    with open(sys.argv[1], 'r') as fin, open(author_translit + ".csv", 'w') as fout:
         for filename in map(str.rstrip, fin):
             process_file(filename, fout, sys.argv[2])
