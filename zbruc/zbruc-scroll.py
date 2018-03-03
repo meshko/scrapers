@@ -31,7 +31,7 @@ loggedin = False
 POSTS_LIMIT = 4000
 
 
-def process_links(elt):
+def process_links(section_name, elt):
    pattern = re.compile("https://zbruc.eu/node/[0-9]*")
    links = elt.find_elements_by_tag_name("a")
    addrs = []
@@ -42,7 +42,7 @@ def process_links(elt):
          pass
       if not pattern.match(addr): continue
       addrs.append(addr)
-   zg.process_files("100let", addrs)
+   zg.process_files(section_name, addrs)
 
 
 def get_html(driver, url):   
@@ -76,7 +76,7 @@ def get_html(driver, url):
 
       if count > 100:
          print("done scrolling!")
-         process_links(driver.find_element_by_id('main_content'))
+         process_links(url.split('/')[-1], driver.find_element_by_id('main_content'))
          break
       time.sleep(sleep_time)     
       #driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -104,5 +104,7 @@ def get_html(driver, url):
 
 if __name__ == "__main__":
    driver = setup()
-   postHtmls = get_html(driver, "https://zbruc.eu/100_years_ago") 
-   #driver.quit()
+   try:
+      postHtmls = get_html(driver, sys.argv[1]) # "https://zbruc.eu/75_years_ago") 
+   finally:   
+     driver.quit()

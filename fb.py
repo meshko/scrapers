@@ -31,7 +31,7 @@ POSTS_LIMIT = 4000
 
 name = None
 
-def get_html(driver, url, username, password, stop_class, posts_limit):   
+def get_html(driver, url, username, password, stop_class, posts_limit, time_limit=.4):   
    global loggedin, name
    #verificationErrors = []
    #accept_next_alert = True
@@ -66,7 +66,12 @@ def get_html(driver, url, username, password, stop_class, posts_limit):
    #for i in range(1,500000):
    sleep_time = .1
    results = []
-   if not name: name = driver.find_element_by_id("fb-timeline-cover-name").text
+   if not name: 
+      try:
+         name_elt = driver.find_element_by_id("fb-timeline-cover-name")
+         if name_elt: name = name_elt.text   
+      except:
+         pass
    print("processing ", name, flush=True)
    while True:
       #print("will get height")
@@ -91,7 +96,7 @@ def get_html(driver, url, username, password, stop_class, posts_limit):
             for elem in elems[:max(1,len(elems)-2)]:
                name_elem = elem.find_element_by_css_selector("span.fwb")
                #print(name_elem)
-               if name_elem and name_elem.text == name: # name mismatch suggests someone else wrote on this wall
+               if (name_elem and name_elem.text == name) or not name: # name mismatch suggests someone else wrote on this wall
                   results.append(elem.get_attribute('innerHTML'))
                driver.execute_script('var element = arguments[0]; element.parentNode.parentNode.parentNode.parentNode.removeChild(element.parentNode.parentNode.parentNode);', elem)
             driver.execute_script("window.scrollTo(0, 0);")
@@ -121,7 +126,7 @@ def get_html(driver, url, username, password, stop_class, posts_limit):
          if all(map(lambda x: x == prev_heights[0], prev_heights)): # all equals
             sleep_time += .05
             prev_heights = []
-            if sleep_time >= .4: break
+            if sleep_time >= time_limit: break
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
             driver.execute_script("window.scrollTo(0, 0);")
       #print("scrolled", height)
@@ -145,10 +150,16 @@ if __name__ == "__main__":
       password = sys.argv[2]
       url = sys.argv[3]
       out_file_name = sys.argv[4]
-   
+  
+   author_profile = url[url.rindex('/')+1:]
+  
    driver = setup()
 
    postHtmls = get_html(driver, url, username, password, "div.sx_7b3bb5", POSTS_LIMIT) 
+   driver.quit()
+   # reset selenium?
+   driver = setup()
+
    f = open(out_file_name, 'w', encoding='utf-8')   
    f.write("downloading %s\n" % url)
    num_posts = 0
@@ -168,10 +179,12 @@ if __name__ == "__main__":
          print("url: ", suburl, flush=True)
          if suburl == "#": # WHAT is this?
             continue
-         if not suburl.startswith("/permalink.php"): continue
-         sub_posts = get_html(driver, "http://www.facebook.com/" + suburl, username, password, "div.UFIReplyActorPhotoWrapper", 1)
+         if not suburl.startswith("/permalink.php") and not author_profile in suburl: continue
+         sub_posts = get_html(driver, "http://www.facebook.com/" + suburl, username, password, "div.UFIReplyActorPhotoWrapper", 1, time_limit=.1)
          if len(sub_posts) != 1:
-            print("ERROR: weird number of posts found?", len(sub_posts))            
+            print("ERROR: weird number of posts found?", len(sub_posts), suburl)
+         if len(sub_posts) == 0:
+            continue
          soup = BeautifulSoup(sub_posts[0], 'html.parser')
          #print(sub_posts[0], flush=True)
          #soup = subsoup.find("div", class_="_1dwg") # "_1dwg _1w_m _q7o")
