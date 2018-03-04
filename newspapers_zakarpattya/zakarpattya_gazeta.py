@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
+import datetime
 import os
 from bs4 import BeautifulSoup
 import codecs
@@ -10,6 +11,7 @@ from transliterate import translit
 import urllib
 import urllib.request
 import unicodedata
+import chardet
 
 def is_cyrillic(text):
     count_cyrillic = 0
@@ -62,15 +64,27 @@ def make_unique_filename(collection_name, title):
 # <ul class="artinfo"><li>23-02-2018, 16:09</li>
 # <div class="fullcontent">
 def process_file(url, collection_name, fout_csv): 
-    content = urllib.request.urlopen(url).read()
+    try:
+       content = urllib.request.urlopen(url).read()
+    except:
+       print("retrying")
+       content = urllib.request.urlopen(url).read()
     soup = BeautifulSoup(content, 'html.parser')
     title_elt = soup.find("h1", class_="artcTitle")
     title_str = title_elt.text.strip()
 
+    print(chardet.detect(title_str.encode()))
+    #os.exit(0)
+
     date1_elt = soup.find("ul", class_="artinfo")
     date_elt = date1_elt.find("li")
     date_str = date_elt.text.strip()
-    year_text = re.search("[0-9]{4}", date_str).group(0)
+    year_match = re.search("[0-9]{4}", date_str)
+    if year_match:
+       year_text = year_match.group(0)
+    else:
+       now = datetime.datetime.now()
+       year_text = str(now.year) # default to current year in case of 'Вчора, 19:33'
 
     content_elt = soup.find("div", class_="fullcontent")
     # stupid cleanup
@@ -92,7 +106,7 @@ def process_file(url, collection_name, fout_csv):
 
     out_filename = make_unique_filename(collection_name, title_str)
     csvwriter = csv.writer(fout_csv)
-    csvwriter.writerow([collection_name, out_filename, title_str, year_text, len(full_text)])
+    csvwriter.writerow([collection_name, out_filename, title_str, year_text, url, len(full_text)])
     with open(out_filename, "w") as fout:
         fout.write(title_str + "\n")
         fout.write(full_text)
@@ -108,20 +122,25 @@ def process_files(section, files):
 
 
 def collect_links(url, links):
+    print("collecting links from %s, so far got %d" % (url, len(links)))
     content = urllib.request.urlopen(url).read()
     soup = BeautifulSoup(content, 'html.parser')
     divs = soup.findAll('div', class_="newsIn")
     for div in divs:
-       links.add(div.find('a').get('href'))
-    print(len(links))
-    pages_elt = soup.find('div', class_='pages')
-    for link in pages_elt.findAll('a'):
+       links.append(div.find('a').get('href'))
+    #pages_elt = soup.find('div', class_='pages')
+    #if not pages_elt:
+    #   print("hmmmmm")
+    #   return
+    #for link in pages_elt.findAll('a'):
+    for link in soup.findAll('a'):
        if link.get_text() == 'наступна':
           collect_links(link.get('href'), links)
 
 def main(url):
-    links = set()
+    links = []
     collect_links(url, links)
+    if url[-1] == '/': url = url[:-1]
     section = url[url.rindex('/')+1:]
     process_files(section, links)
 
