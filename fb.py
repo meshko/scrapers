@@ -20,10 +20,13 @@ import unittest, time, re
 import getpass
 
 def setup():
+   global loggedin
    firefox_profile = webdriver.FirefoxProfile()
    firefox_profile.set_preference('permissions.default.image', 2)
+   firefox_profile.set_preference('permissions.default.desktop-notification', 1)
    driver = webdriver.Firefox(firefox_profile=firefox_profile)
    driver.implicitly_wait(30)
+   loggedin = False
    return driver
 
 loggedin = False
@@ -31,8 +34,9 @@ POSTS_LIMIT = 4000
 
 name = None
 
-def get_html(driver, url, username, password, stop_class, posts_limit, time_limit=.4):   
+def get_html(driver, url, username, password, stop_class, posts_limit, timeout=60):   
    global loggedin, name
+   time_limit = .4
    #verificationErrors = []
    #accept_next_alert = True
    #delay = 3
@@ -56,7 +60,7 @@ def get_html(driver, url, username, password, stop_class, posts_limit, time_limi
          print("done with logging in", flush=True)
       except NoSuchElementException:      
         pass    
-   driver.implicitly_wait(60)
+   driver.implicitly_wait(timeout)
    #print(driver.find_element_by_class_name("_1k67 _cy7"))
    base_url = url
    driver.get(base_url)
@@ -69,7 +73,12 @@ def get_html(driver, url, username, password, stop_class, posts_limit, time_limi
    if not name: 
       try:
          name_elt = driver.find_element_by_id("fb-timeline-cover-name")
-         if name_elt: name = name_elt.text   
+         if name_elt:
+            alt_name = name_elt.driver.find_element_by_css_selector("span.alternate_name")
+            if alt_name:
+               driver.execute_script("arguments[0].parentNode.removeChild(arguments[0]);", alt_name) 
+            name = name_elt.text 
+            print("got name " + name)  
       except:
          pass
    print("processing ", name, flush=True)
@@ -134,25 +143,24 @@ def get_html(driver, url, username, password, stop_class, posts_limit, time_limi
    elems = driver.find_elements_by_css_selector("div._1dwg") # just the post (inside 5pcr)
    for elem in elems:
       name_elem = elem.find_element_by_css_selector("span.fwb")
-      if name_elem and name_elem.text == name:
+      if name is None or (name_elem and name_elem.text == name):
          results.append(elem.get_attribute('innerHTML'))
    return results
 
 
 if __name__ == "__main__":
-   if len(sys.argv) < 4:
+   if len(sys.argv) < 3:
       username = input("your facebook username: ")
       password = getpass.getpass("password: ")
       url = sys.argv[1]
-      out_file_name = sys.argv[2]
    else:
       username = sys.argv[1]
       password = sys.argv[2]
       url = sys.argv[3]
-      out_file_name = sys.argv[4]
   
    author_profile = url[url.rindex('/')+1:]
-  
+   out_file_name = author_profile + ".txt" 
+ 
    driver = setup()
 
    postHtmls = get_html(driver, url, username, password, "div.sx_7b3bb5", POSTS_LIMIT) 
@@ -180,7 +188,7 @@ if __name__ == "__main__":
          if suburl == "#": # WHAT is this?
             continue
          if not suburl.startswith("/permalink.php") and not author_profile in suburl: continue
-         sub_posts = get_html(driver, "http://www.facebook.com/" + suburl, username, password, "div.UFIReplyActorPhotoWrapper", 1, time_limit=.1)
+         sub_posts = get_html(driver, "http://www.facebook.com/" + suburl, username, password, "div.UFIReplyActorPhotoWrapper", 1, timeout=3)
          if len(sub_posts) != 1:
             print("ERROR: weird number of posts found?", len(sub_posts), suburl)
          if len(sub_posts) == 0:
