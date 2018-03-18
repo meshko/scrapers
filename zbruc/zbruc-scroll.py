@@ -49,12 +49,19 @@ def get_html(driver, url):
    driver.implicitly_wait(60)
    #print(driver.find_element_by_class_name("_1k67 _cy7"))
    base_url = url
+   section_name = url.split('/')[-1]
    driver.get(base_url)
 
    prev_heights = []
    sleep_time = .1
    results = []
    count = 0
+
+   left_sidebar_elt = driver.find_element_by_id('sidebar_left')
+   right_sidebar_elt = driver.find_element_by_id('sidebar_right')
+   driver.execute_script("arguments[0].parentNode.removeChild(arguments[0]);", left_sidebar_elt)
+   driver.execute_script("arguments[0].parentNode.removeChild(arguments[0]);", right_sidebar_elt)
+
    while True:
       #print("will get height")
       bilshe_elts = driver.find_elements_by_css_selector("div.item-list")
@@ -74,9 +81,11 @@ def get_html(driver, url):
       else:
          count += 1
 
-      if count > 100:
+      if count > 10:
          print("done scrolling!")
-         process_links(url.split('/')[-1], driver.find_element_by_id('main_content'))
+         with open(section_name + ".html", 'w') as fout:
+            fout.write(driver.page_source)
+         process_links(section_name, driver.find_element_by_id('main_content'))
          break
       time.sleep(sleep_time)     
       #driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
@@ -107,4 +116,4 @@ if __name__ == "__main__":
    try:
       postHtmls = get_html(driver, sys.argv[1]) # "https://zbruc.eu/75_years_ago") 
    finally:   
-     driver.quit()
+      driver.quit()

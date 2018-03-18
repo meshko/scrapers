@@ -34,9 +34,8 @@ POSTS_LIMIT = 4000
 
 name = None
 
-def get_html(driver, url, username, password, stop_class, posts_limit, timeout=60):   
+def get_html(driver, url, username, password, stop_class, posts_limit, timeout=120):   
    global loggedin, name
-   time_limit = .4
    #verificationErrors = []
    #accept_next_alert = True
    #delay = 3
@@ -63,11 +62,15 @@ def get_html(driver, url, username, password, stop_class, posts_limit, timeout=6
    driver.implicitly_wait(timeout)
    #print(driver.find_element_by_class_name("_1k67 _cy7"))
    base_url = url
-   driver.get(base_url)
+   try:
+      driver.get(base_url)
+   except:
+      driver.get(base_url) # 1 retry enough?
 
    #driver.find_element_by_link_text("All").click()   
    prev_heights = []
    #for i in range(1,500000):
+   time_limit = .5
    sleep_time = .1
    results = []
    if not name: 
@@ -110,7 +113,7 @@ def get_html(driver, url, username, password, stop_class, posts_limit, timeout=6
                driver.execute_script('var element = arguments[0]; element.parentNode.parentNode.parentNode.parentNode.removeChild(element.parentNode.parentNode.parentNode);', elem)
             driver.execute_script("window.scrollTo(0, 0);")
          
-         print(len(results), flush=True)
+         print("%d %f" % (len(results), sleep_time), flush=True)
          #driver.execute_script('alert(document.getElementsByClassName("_1dwg")[0])')
          #print(driver.execute_script('return document.getElementsByClassName("_1dwg")[0].remove();'))
          #driver.execute_script('var element = arguments[0]; element.parentNode.removeChild(element);', elem)         
@@ -133,7 +136,7 @@ def get_html(driver, url, username, password, stop_class, posts_limit, timeout=6
          prev_heights = prev_heights[-20:]
          #print(last_n_elts, sleep_time, flush=True)
          if all(map(lambda x: x == prev_heights[0], prev_heights)): # all equals
-            sleep_time += .05
+            sleep_time += (time_limit/100.0)
             prev_heights = []
             if sleep_time >= time_limit: break
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
