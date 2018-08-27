@@ -34,7 +34,7 @@ POSTS_LIMIT = 4000
 
 name = None
 
-def get_html(driver, url, username, password, stop_class, posts_limit, timeout=120):   
+def get_html(driver, url, username, password, stop_class, posts_limit, timeout=120, time_limit=.5):   
    global loggedin, name
    #verificationErrors = []
    #accept_next_alert = True
@@ -70,7 +70,6 @@ def get_html(driver, url, username, password, stop_class, posts_limit, timeout=1
    #driver.find_element_by_link_text("All").click()   
    prev_heights = []
    #for i in range(1,500000):
-   time_limit = .5
    sleep_time = .1
    results = []
    if not name: 
@@ -87,9 +86,12 @@ def get_html(driver, url, username, password, stop_class, posts_limit, timeout=1
    print("processing ", name, flush=True)
    while True:
       #print("will get height")
-      driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-      height = driver.execute_script("return document.body.scrollHeight;")             
-      driver.implicitly_wait(0)
+      try:
+         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+         height = driver.execute_script("return document.body.scrollHeight;")             
+         driver.implicitly_wait(0)
+      except Exception as e:
+         print("failed to scroll: ", e)
       end_elem = None
       try:
          #elem = driver.find_elements_by_class_name(stop_class)
@@ -136,11 +138,14 @@ def get_html(driver, url, username, password, stop_class, posts_limit, timeout=1
          prev_heights = prev_heights[-20:]
          #print(last_n_elts, sleep_time, flush=True)
          if all(map(lambda x: x == prev_heights[0], prev_heights)): # all equals
-            sleep_time += (time_limit/100.0)
+            sleep_time += (time_limit/10.0)
             prev_heights = []
             if sleep_time >= time_limit: break
-            driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            driver.execute_script("window.scrollTo(0, 0);")
+            try:
+               driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+               driver.execute_script("window.scrollTo(0, 0);")
+            except Exception as e:
+               print("failed to scroll: ", e)
       #print("scrolled", height)
       time.sleep(sleep_time)      
    elems = driver.find_elements_by_css_selector("div._1dwg") # just the post (inside 5pcr)
@@ -191,7 +196,7 @@ if __name__ == "__main__":
          if suburl == "#": # WHAT is this?
             continue
          if not suburl.startswith("/permalink.php") and not author_profile in suburl: continue
-         sub_posts = get_html(driver, "http://www.facebook.com/" + suburl, username, password, "div.UFIReplyActorPhotoWrapper", 1, timeout=3)
+         sub_posts = get_html(driver, "http://www.facebook.com/" + suburl, username, password, "div.UFIReplyActorPhotoWrapper", 1, timeout=3, time_limit=.2)
          if len(sub_posts) != 1:
             print("ERROR: weird number of posts found?", len(sub_posts), suburl)
          if len(sub_posts) == 0:
