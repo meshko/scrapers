@@ -12,6 +12,7 @@ import unicodedata
 
 no_name_idx = 0
 MIN_SIZE = 5 
+skip_older_than_year = 1700
 
 def is_cyrillic(text):
     count_cyrillic = 0
@@ -85,6 +86,8 @@ def process_file(filename, collection_name, fout_csv):
             soup = BeautifulSoup(fin, 'html.parser')
     title_elt = soup.find("div", id="page-title")
     if not title_elt:
+       title_elt = soup.find("div", class_="title")
+    if not title_elt:
        title = "missing title?"
        print("ERROR: " + filename + "  doesn't have a tite!")
     else:
@@ -128,6 +131,8 @@ def process_file(filename, collection_name, fout_csv):
 
     content_elt = soup.find("div", id="content")
     if not content_elt:
+       content_elt = soup.find("div", class_="text")
+    if not content_elt:
        print("ERROR: " + filename + " content not found???")
        return
     #bad_div = content_elt.find("div", class_="field-name-field-date")
@@ -149,7 +154,7 @@ def process_file(filename, collection_name, fout_csv):
         print("skipping poem", title, publish_text, filename)
         return
 
-    if is_older_than(full_text, 1950):
+    if is_older_than(full_text, skip_older_than_year):
         print("skipping old text", title, publish_text, filename)
         return
 
@@ -181,11 +186,15 @@ def process_files(section, files):
             count += 1
 
 
-def main(section, url):
+def main(args):
+    section = args[1]
+    url = args[2]
+    if (len(args) > 3):
+      skip_older_than_year = int(args[3])
     if not os.path.exists(section): os.mkdir(section)
     with open(section + ".csv", "w") as fout:
         process_file(url, section, fout)
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv)
 
