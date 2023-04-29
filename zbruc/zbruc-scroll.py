@@ -29,7 +29,7 @@ def setup():
    driver.implicitly_wait(30)
    return driver
 
-def process_links(section_name, elt):
+def get_links(section_name, elt):
    pattern = re.compile("https://zbruc.eu/node/[0-9]*")
    links = elt.find_elements(By.TAG_NAME, "a")
    print(f"found {len(links)} links")
@@ -42,6 +42,9 @@ def process_links(section_name, elt):
       if not pattern.match(addr): continue
       addrs.append(addr)
    print(f"found {len(addrs)} URLs")
+   return addrs
+
+def process_links(section_name, addrs):
    zg.process_files(section_name, addrs)
 
 
@@ -85,7 +88,9 @@ def get_html(driver, url):
        fout.write(driver.page_source)
        main_elt = driver.find_element(By.ID, "isotope_items")
        #main_elt = driver.find_element(By.ID, "...")
-       process_links(section_name, main_elt)
+       links = get_links(section_name, main_elt)
+       driver.close()
+       links = process_links(section_name, links)
 
 if __name__ == "__main__":
    driver = setup()
