@@ -82,7 +82,7 @@ def process_file(filename, collection_name, fout_csv):
        content= urllib.request.urlopen(filename).read()
        soup = BeautifulSoup(content, 'html.parser')
     else:
-        with open(filename, 'r') as fin:
+        with open(filename, 'r', encoding="utf-8") as fin:
             soup = BeautifulSoup(fin, 'html.parser')
     title_elt = soup.find("div", id="page-title")
     if not title_elt:
@@ -169,7 +169,7 @@ def process_file(filename, collection_name, fout_csv):
         idx += 1
       
     csvwriter.writerow([collection_name, out_filename, title, publish_text, len(full_text), filename, publisher, year_text, author_text])
-    with open(out_filename, "w") as fout:
+    with open(out_filename, "w", encoding="utf-8") as fout:
         fout.write(full_text)
 
 """<div id="page-title" >""" # title
@@ -178,7 +178,7 @@ def process_file(filename, collection_name, fout_csv):
 
 def process_files(section, files):
     if not os.path.exists(section): os.mkdir(section)
-    with open(section + ".csv", "w") as fout:
+    with open(section + ".csv", "w", encoding="utf-8") as fout:
         count = 1
         for file in files:
             print("processing %s %d out of %d" % (file, count, len(files)))
@@ -192,7 +192,7 @@ def main(args):
     if (len(args) > 3):
       skip_older_than_year = int(args[3])
     if not os.path.exists(section): os.mkdir(section)
-    with open(section + ".csv", "w") as fout:
+    with open(section + ".csv", "w", encoding="utf-8") as fout:
         process_file(url, section, fout)
 
 if __name__ == "__main__":

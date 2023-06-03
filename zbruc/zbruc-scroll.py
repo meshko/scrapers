@@ -84,7 +84,7 @@ def get_html(driver, url):
    scroll_to_end()
 
    print("done scrolling!")
-   with open(section_name + ".html", 'w') as fout:
+   with open(section_name + ".html", 'w', encoding="utf-8") as fout:
        fout.write(driver.page_source)
        main_elt = driver.find_element(By.ID, "isotope_items")
        #main_elt = driver.find_element(By.ID, "...")
